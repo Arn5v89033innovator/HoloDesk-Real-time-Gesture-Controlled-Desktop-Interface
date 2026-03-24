@@ -131,4 +131,4 @@ Edit `actions.py` to remap menu options to any commands you like.
 
 ---
 
-*Built with OpenCV · MediaPipe · Pygame*
+*Built with OpenCV · MediaPipe · Pygame . Made by Arnav Upadhyay*
