@@ -1,224 +1,134 @@
-# 🖐 HoloDesk
-### Real-time Gesture-Controlled Desktop Interface
+# HoloDesk — Gesture Controlled Desktop Interface
 
-HoloDesk uses your webcam to detect hand gestures and lets you control your entire computer — move the mouse, click, drag, scroll, switch virtual desktops, and launch apps — all without touching a keyboard or mouse. A Tony Stark–style holographic radial menu appears when you raise your open palm.
-
----
-
-## Project Structure
-
-```
-HoloDesk/
-├── main.py                ← Run this to start the app
-├── requirements.txt
-│
-├── hand_tracking.py       # MediaPipe landmark extraction
-├── gesture_detection.py   # Gesture classifier (palm/pinch/point/fist)
-├── desktop_controls.py    # Mouse, drag, scroll, desktop switching
-├── menu_ui.py             # Holographic radial menu renderer (Pygame)
-└── actions.py             # App launcher (browser, files, blender etc.)
-```
+> *Tony Stark–style holographic interface controlled entirely by hand gestures.*
 
 ---
 
-## Quick Start
+## ✦ Demo Overview
 
-### 1 — Install dependencies
+When you raise an **open palm** in front of your webcam, a glowing radial menu
+materialises around your hand. Point your **index finger** to hover over options.
+Perform a **pinch gesture** (hold for ~0.35 s) to launch an app. Make a **fist**
+to dismiss the menu.
+
+---
+
+## ✦ Requirements
+
+| Requirement     | Version       |
+|-----------------|---------------|
+| Python          | ≥ 3.10        |
+| Webcam          | Any USB / built-in |
+| OS              | Windows / macOS / Linux |
+
+---
+
+## ✦ Installation
 
 ```bash
-# Python 3.10 – 3.11 recommended
+# 1. Clone or download the project
+cd holodesk
+
+# 2. (Recommended) Create a virtual environment
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS / Linux:
+source .venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
 ```
 
-> ⚠️ **MediaPipe compatibility fix** — if you get a protobuf error on startup:
-> ```bash
-> pip uninstall protobuf -y
-> pip install protobuf==3.20.3
-> ```
+> **Linux users:** if pygame audio gives errors, install:
+> `sudo apt install python3-pygame libsdl2-dev`
 
-### 2 — Run HoloDesk
+---
+
+## ✦ Running the Program
 
 ```bash
 python main.py
 ```
 
-| Key | Action |
-|-----|--------|
-| `M` | Manually toggle the holographic menu (for testing) |
-| `Q` / `ESC` | Quit |
+Press **Q** or **ESC** to quit at any time.
 
 ---
 
-## How It Works
+## ✦ Gesture Reference
 
-HoloDesk operates in **two modes** at all times:
-
-### 🖥️ Desktop Control Mode *(default — green banner)*
-
-| Gesture | Action |
-|---------|--------|
-| ☝ Index finger point + move | Moves the mouse cursor |
-| 🤏 Pinch (quick release) | Left click |
-| 🤏 Pinch + move hand | Drag a window or object |
-| ☝ Point + flick finger up/down | Scroll the page |
-| 🖐 Open palm + swipe right | Switch to next virtual desktop |
-| 🖐 Open palm + swipe left | Switch to previous virtual desktop |
-| 🖐 Hold open palm still | Opens the holographic menu |
-
-### 🌐 Menu Interaction Mode *(cyan banner)*
-
-| Gesture | Action |
-|---------|--------|
-| ☝ Point at a menu item | Highlights / hovers the item |
-| 🤏 Pinch + hold (~0.45 s) | Selects and launches the app |
-| ✊ Fist | Closes the menu, returns to Desktop Mode |
+| Gesture          | Effect                          |
+|------------------|---------------------------------|
+| 🖐 Open Palm      | Open / keep the menu active     |
+| ☝ Index Finger   | Hover over menu options         |
+| 🤏 Pinch (hold)  | Select the highlighted option   |
+| ✊ Fist           | Close the menu                  |
 
 ---
 
-## Holographic Menu Options
+## ✦ Menu Options
 
-| Icon | Option | Action |
-|------|--------|--------|
-| 🌐 | Browser | Opens default browser |
-| 🎵 | Music | Opens music player |
-| 📁 | Files | Opens file explorer |
-| 🔢 | Calculator | Opens system calculator |
-| 🌀 | Blender | Launches Blender 3D |
-| ⚙ | Settings | Opens system settings |
+| Option      | Action                                 |
+|-------------|----------------------------------------|
+| 🌐 Browser   | Opens Google Chrome (default browser)  |
+| 🎵 Music     | Opens system music player              |
+| 📁 Files     | Opens file explorer / Finder           |
+| 🔢 Calculator| Opens system calculator                |
+| 🌀 Blender   | Launches Blender 3D                    |
+| ⚙ Settings  | Opens system settings                  |
 
 ---
 
-## Gesture Priority System
-
-To prevent conflicts, gestures are evaluated in this order every frame:
+## ✦ Project Structure
 
 ```
-1. OPEN_PALM (held still)  →  open holographic menu
-2. menu_open == True?      →  handle menu gestures only
-3. OPEN_PALM + fast swipe  →  desktop switch (Ctrl+Win+Left/Right)
-4. PINCH                   →  click or drag
-5. POINTING + movement     →  move cursor / scroll
+holodesk/
+├── main.py               ← Entry point & main loop
+├── hand_tracking.py      ← MediaPipe hand landmark wrapper
+├── gesture_detection.py  ← Gesture classifier (palm/pinch/fist/point)
+├── menu_ui.py            ← Holographic radial menu renderer (Pygame)
+├── actions.py            ← System actions (open apps)
+├── utils.py              ← Math helpers, easing, smooth values
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## Architecture Overview
+## ✦ Configuration
 
-```
-Webcam frame
-    │
-    ▼
-HandTracker  (MediaPipe — 21 landmarks per hand)
-    │  normalised (x, y, z) coordinates
-    ▼
-GestureDetector  (rule-based classifier)
-    │  OPEN_PALM / POINTING / PINCH / FIST
-    ▼
-Mode Router  (menu_open flag)
-    │
-    ├── Desktop Control Mode
-    │       DesktopController  (PyAutoGUI)
-    │       • cursor movement with sensitivity + smoothing
-    │       • click / drag detection
-    │       • vertical scroll via finger velocity
-    │       • 4-finger desktop switch via palm swipe velocity
-    │
-    └── Menu Interaction Mode
-            RadialMenu  (Pygame)
-            • holographic HUD rendered on webcam feed
-            • pinch dwell selection with progress ring
-            • 6-second cooldown after each selection
-            Actions  (subprocess / webbrowser)
-            • cross-platform app launching
-    │
-    ▼
-Screen output  🖥️  +  OS mouse / keyboard actions  🖱️⌨️
-```
+Edit `main.py` to change:
+
+| Variable         | Default | Description                         |
+|------------------|---------|-------------------------------------|
+| `WINDOW_W/H`     | 1280×720| Display resolution                  |
+| `TARGET_FPS`     | 30      | Target frame rate                   |
+| `CAM_INDEX`      | 0       | Webcam device index                 |
+| `MIRROR_CAM`     | True    | Flip image horizontally             |
+| `PINCH_DWELL_S`  | 0.35    | Seconds to hold pinch for selection |
+
+Edit `actions.py` to remap menu options to any commands you like.
 
 ---
 
-## Configuration
+## ✦ Tips for Best Results
 
-All tuning constants are at the top of their respective files:
-
-### `main.py`
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WINDOW_W / WINDOW_H` | `1280 × 720` | Display resolution |
-| `TARGET_FPS` | `30` | Target frame rate |
-| `CAM_INDEX` | `0` | Webcam device index |
-| `MIRROR_CAM` | `True` | Flip camera horizontally |
-| `PINCH_DWELL_S` | `0.45` | Seconds to hold pinch before menu selection fires |
-| `POST_SELECT_COOLDOWN_S` | `6.0` | Lockout after a menu selection |
-| `PALM_OPEN_DEBOUNCE` | `6` | Frames of open palm needed to open menu |
-
-### `desktop_controls.py`
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CURSOR_SENSITIVITY` | `2.0` | Hand movement amplification (1.0 = 1:1) |
-| `CURSOR_SMOOTHING` | `0.35` | EMA smoothing factor (lower = smoother) |
-| `SCROLL_THRESHOLD_PX` | `8` | Min finger movement to trigger scroll |
-| `SCROLL_AMOUNT` | `3` | Scroll units per tick |
-| `SWIPE_VELOCITY_PX` | `55` | Palm speed needed for desktop switch |
-| `SWIPE_BLOCKS_MENU_S` | `1.5` | Seconds menu is blocked after a swipe |
+* **Good lighting** dramatically improves hand detection accuracy.
+* Keep your hand **30–70 cm** from the webcam.
+* Perform gestures **slowly and deliberately** — the debounce filter needs ~4 frames.
+* If the menu drifts, re-raise your open palm to re-anchor it.
 
 ---
 
-## Tips for Best Results
-
-- Keep your hand **30–60 cm** from the webcam
-- Use **good lighting** — it dramatically improves detection accuracy
-- Watch the **bottom-left HUD** — it shows your current detected gesture in real time
-- Perform gestures **slowly and deliberately**, especially pinch
-- After launching an app, wait for the **red COOLDOWN timer** to expire before selecting again
-- If desktop switching accidentally opens the menu, increase `SWIPE_BLOCKS_MENU_S`
-
----
-
-## Troubleshooting
+## ✦ Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Webcam not found | Change `CAM_INDEX = 1` (or `2`) in `main.py` |
-| `AttributeError: 'MessageFactory'` | `pip install protobuf==3.20.3` |
-| Blender not opening | Set the full path in `actions.py` → `open_blender()` |
-| Cursor moves too slowly | Increase `CURSOR_SENSITIVITY` in `desktop_controls.py` |
-| Menu opens during swipe | Increase `SWIPE_BLOCKS_MENU_S` in `desktop_controls.py` |
-| App launches multiple times | Increase `POST_SELECT_COOLDOWN_S` in `main.py` |
-| Low FPS / laggy | Lower `WINDOW_W / WINDOW_H` in `main.py` |
-| Gestures not recognised | Ensure good lighting; re-check hand distance from camera |
+| `Cannot open webcam` | Change `CAM_INDEX = 1` (or 2) in `main.py` |
+| Laggy / low FPS | Lower `WINDOW_W/H` or reduce `max_hands` |
+| App not launching | Check the app is installed; edit `actions.py` |
+| Pinch not registering | Adjust `PINCH_THRESHOLD` in `gesture_detection.py` |
 
 ---
 
-## Requirements
-
-```
-opencv-python>=4.8.0
-mediapipe==0.10.9
-pygame>=2.5.0
-numpy>=1.24.0
-pyautogui>=0.9.54
-protobuf==3.20.3
-```
-
----
-
-## About
-
-HoloDesk is a Python computer-vision project that turns your webcam into a futuristic gesture controller. Using MediaPipe for hand tracking and Pygame for the holographic UI, it lets you operate your entire desktop — cursor, clicks, scrolling, virtual desktops, and app launching — using only hand gestures, with no physical input device required.
-
----
-
-## Contributors
-
-**Arnav Upadhyay** — [@Arn5v89033innovator](https://github.com/Arn5v89033innovator)
-
----
-
-## Languages
-
-![Python](https://img.shields.io/badge/Python-100%25-blue?logo=python)
-
----
-
-*Built with OpenCV · MediaPipe · Pygame · PyAutoGUI*
+*Built with OpenCV · MediaPipe · Pygame*
